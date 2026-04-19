@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebNexify | A4 Landscape Marksheet Generator</title>
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <!-- PDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -127,7 +127,7 @@
             width: 297mm;
             height: 210mm;
             background: #fff;
-            margin: 20px auto;
+            margin: 0 auto; /* Required for centering */
             padding: 6mm;
             box-sizing: border-box;
             border: 1px solid #ccc;
@@ -135,6 +135,9 @@
             font-family: "Times New Roman", Times, serif;
             color: #000;
             overflow: hidden;
+            transform: none; /* Required for PDF fit */
+            zoom: 1;
+            max-width: 100%;
         }
 
         .outer-border {
@@ -274,14 +277,14 @@
 
         /* Print Settings */
         @media print {
-            body { background: white; padding: 0; }
+            body { margin: 0; padding: 0; background: white; }
             .admin-wrapper { display: none !important; }
             #printable-marksheet {
                 display: block !important;
                 margin: 0 !important;
                 border: none !important;
-                width: 100%;
-                height: 100vh;
+                width: 297mm;
+                height: 210mm;
             }
             @page {
                 size: A4 landscape;
@@ -359,8 +362,8 @@
             <div id="subject-inputs-container">
                 <div class="subject-grid-header">
                     <div>Subject Name</div>
-                    <div>1st Term</div>
-                    <div>2nd Term</div>
+                    <div>1st SEM</div>
+                    <div>2nd SEM</div>
                 </div>
                 <div id="subject-inputs-list"></div>
             </div>
@@ -467,7 +470,7 @@
                     <div class="col">
                         <div class="subject-table-container">
                             <table>
-                                <tr class="bg-gray"><td class="text-left" style="width: 48%;">SUBJECT NAME</td><td>1ST TERM</td><td>2ND TERM</td></tr>
+                                <tr class="bg-gray"><td class="text-left" style="width: 48%;">SUBJECT NAME</td><td>1ST SEM EXAM</td><td>2ND SEM EXAM</td></tr>
                                 <tbody id="out_subject_rows"></tbody>
                             </table>
                         </div>
@@ -673,36 +676,35 @@
         }
 
         function downloadPDF() {
-            const element = document.getElementById('printable-marksheet');
+            const element = document.getElementById("printable-marksheet");
+
             if(element.style.display === 'none') {
                 alert("Please generate the preview first!");
                 return;
             }
-            
-            element.style.display = 'block';
+
+            element.style.display = "block";
 
             const opt = {
-                margin: 0,
+                margin: [0,0,0,0],
                 filename: `Report_Card_${document.getElementById('in_name').value || 'Student'}.pdf`,
-                image: { type: 'jpeg', quality: 1 },
+                image: { type: "jpeg", quality: 1 },
                 html2canvas: {
-                    scale: 3,
+                    scale: 2,
                     useCORS: true,
-                    scrollY: 0,
                     scrollX: 0,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight
+                    scrollY: 0
                 },
                 jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'landscape'
+                    unit: "mm",
+                    format: [297,210],
+                    orientation: "landscape"
                 }
             };
 
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save();
-            }, 300);
+            }, 500);
         }
 
         function resetAll() {
