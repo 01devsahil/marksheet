@@ -127,7 +127,7 @@
             width: 297mm;
             height: 210mm;
             background: #fff;
-            margin: 0 auto;
+            margin: 0 auto; /* Required for centering */
             padding: 6mm;
             box-sizing: border-box;
             border: 1px solid #ccc;
@@ -717,9 +717,14 @@
 
             element.style.display = "block";
 
+            const studentName = document.getElementById("in_name").value.trim() || "Student";
+            const std = document.getElementById("in_std").value;
+            const fileName = studentName + " " + formatClass(std) + ".pdf";
+            const safeName = fileName.replace(/[\\/:*?"<>|]/g,'');
+
             const opt = {
                 margin: 0,
-                filename: `Report_Card_${document.getElementById('in_name').value || 'Student'}.pdf`,
+                filename: safeName,
                 image: { type: "jpeg", quality: 1 },
                 html2canvas: {
                     scale: 4,
