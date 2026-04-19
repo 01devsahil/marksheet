@@ -534,6 +534,25 @@
         const pointToGradeNormal = ["D2", "D2", "D1", "C2", "C1", "B2", "B1", "A2", "A1"];
         const pointToGradePrePrimary = ["D", "D", "D+", "C", "C+", "B", "B+", "A", "A+"];
 
+        function formatClass(std){
+            const map = {
+                "1":"1ST",
+                "2":"2ND",
+                "3":"3RD",
+                "4":"4TH",
+                "5":"5TH",
+                "6":"6TH",
+                "7":"7TH",
+                "8":"8TH",
+                "9":"9TH",
+                "10":"10TH",
+                "NR":"NR",
+                "JR":"JR",
+                "SR":"SR"
+            };
+            return map[std] || std;
+        }
+
         function isPrePrimary() {
             const std = document.getElementById('in_std').value;
             return ["NR", "JR", "SR"].includes(std);
@@ -645,7 +664,7 @@
             if(!data.name) return alert("Please enter Student Name.");
 
             document.getElementById('out_name').innerText = data.name.toUpperCase();
-            document.getElementById('out_std').innerText = isNaN(data.std) ? data.std : data.std + "TH";
+            document.getElementById('out_std').innerText = formatClass(data.std);
             document.getElementById('out_div').innerText = data.div.toUpperCase();
             document.getElementById('out_roll').innerText = data.roll;
             document.getElementById('out_gender').innerText = data.gender;
@@ -681,7 +700,7 @@
             if (data.res_status === 'FAIL') {
                 document.getElementById('out_promotion').innerText = `RESULT : FAILED`;
             } else {
-                let promotionClass = (data.res_mode === 'manual') ? data.res_promote : (promotionMap[data.std] || "-");
+                let promotionClass = (data.res_mode === 'manual') ? formatClass(data.res_promote) : (promotionMap[data.std] || "-");
                 document.getElementById('out_promotion').innerText = `PASSED & PROMOTED TO : ${promotionClass}`;
             }
 
@@ -697,9 +716,10 @@
             }
 
             element.style.display = "block";
+
             const opt = {
                 margin: 0,
-                filename: "Report_Card.pdf",
+                filename: `Report_Card_${document.getElementById('in_name').value || 'Student'}.pdf`,
                 image: { type: "jpeg", quality: 1 },
                 html2canvas: {
                     scale: 4,
