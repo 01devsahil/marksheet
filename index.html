@@ -127,7 +127,7 @@
             width: 297mm;
             height: 210mm;
             background: #fff;
-            margin: 0 auto; /* Required for centering */
+            margin: 0 auto;
             padding: 6mm;
             box-sizing: border-box;
             border: 1px solid #ccc;
@@ -135,7 +135,7 @@
             font-family: "Times New Roman", Times, serif;
             color: #000;
             overflow: hidden;
-            transform: none; /* Required for PDF fit */
+            transform: none;
             zoom: 1;
             max-width: 100%;
             image-rendering: high-quality;
@@ -301,7 +301,7 @@
     <div class="admin-wrapper">
         <div class="admin-header">
             <h1 style="font-size: 20px; font-weight: 700;">WebNexify Marksheet Engine</h1>
-            <p style="font-size: 12px; opacity: 0.8; margin-top: 3px;">Production Multi-Curriculum v3.6</p>
+            <p style="font-size: 12px; opacity: 0.8; margin-top: 3px;">Production Multi-Curriculum v3.7</p>
         </div>
         
         <div class="admin-content">
@@ -313,7 +313,7 @@
                 </div>
                 <div class="field-group">
                     <label>Standard</label>
-                    <select id="in_std" onchange="updateSubjectInputs(); autoSave();">
+                    <select id="in_std" onchange="handleStandardChange()">
                         <option value="NR">NR</option>
                         <option value="JR">JR</option>
                         <option value="SR">SR</option>
@@ -365,8 +365,8 @@
             <div id="subject-inputs-container">
                 <div class="subject-grid-header">
                     <div>Subject Name</div>
-                    <div>1st SEM</div>
-                    <div>2nd SEM</div>
+                    <div>1ST TERM</div>
+                    <div>2ND TERM</div>
                 </div>
                 <div id="subject-inputs-list"></div>
             </div>
@@ -383,9 +383,7 @@
                 <div class="field-group">
                     <label>Manual Final Grade</label>
                     <select id="in_res_manual_grade" onchange="autoSave()">
-                        <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option>
-                        <option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
-                        <option value="D1">D1</option><option value="D2">D2</option>
+                        <!-- Options populated dynamically -->
                     </select>
                 </div>
                 <div class="field-group">
@@ -473,7 +471,7 @@
                     <div class="col">
                         <div class="subject-table-container">
                             <table>
-                                <tr class="bg-gray"><td class="text-left" style="width: 48%;">SUBJECT NAME</td><td>1ST SEM EXAM</td><td>2ND SEM EXAM</td></tr>
+                                <tr class="bg-gray"><td class="text-left" style="width: 48%;">SUBJECT NAME</td><td>1ST TERM EXAM</td><td>2ND TERM EXAM</td></tr>
                                 <tbody id="out_subject_rows"></tbody>
                             </table>
                         </div>
@@ -510,7 +508,7 @@
     </div>
 
     <script>
-        // Subject Lists Configuration - Updated NR, JR, SR lists
+        // Subject Lists Configuration
         const subjectLists = {
             "NR_JR": ["POETRY", "READING", "CONVERSATION", "SINGING", "STORY NARRATION", "ENGLISH(W)", "HINDI(O)", "HINDI(W)", "MATHS(O)", "MATHS(W)", "DRAWING AND CRAFT", "GK"],
             "SR": ["POETRY", "READING", "CONVERSATION", "SINGING", "STORY NARRATION", "ENGLISH(W)", "HINDI(O)", "HINDI(W)", "MATHS(O)", "MATHS(W)", "DRAWING AND CRAFT", "GK", "DICTATION"],
@@ -518,54 +516,73 @@
             "SECONDARY": ["ENGLISH", "MARATHI", "HINDI", "SS", "MATHEMATICS", "SCIENCE", "COMPUTER", "GK", "DRAWING", "YOGA", "PHYSICAL TRAINING"]
         };
 
-        const promotionMap = {
-            "NR": "JR",
-            "JR": "SR",
-            "SR": "1ST",
-            "1": "2ND",
-            "2": "3RD",
-            "3": "4TH",
-            "4": "5TH",
-            "5": "6TH",
-            "6": "7TH",
-            "7": "8TH",
-            "8": "9TH",
-            "9": "10TH",
-            "10": "COMPLETED"
+        const gradeOptions = {
+            "PRE_PRIMARY": ["A+", "A", "B+", "B", "C+", "C", "D+", "D"],
+            "NORMAL": ["A1", "A2", "B1", "B2", "C1", "C2", "D1", "D2"]
         };
 
-        const gradeMap = { "A1": 8, "A2": 7, "B1": 6, "B2": 5, "C1": 4, "C2": 3, "D1": 2, "D2": 1 };
-        const pointToGrade = ["D2", "D2", "D1", "C2", "C1", "B2", "B1", "A2", "A1"];
+        const promotionMap = {
+            "NR": "JR", "JR": "SR", "SR": "1ST", "1": "2ND", "2": "3RD", "3": "4TH", "4": "5TH",
+            "5": "6TH", "6": "7TH", "7": "8TH", "8": "9TH", "9": "10TH", "10": "COMPLETED"
+        };
+
+        const gradeMap = { 
+            "A1": 8, "A2": 7, "B1": 6, "B2": 5, "C1": 4, "C2": 3, "D1": 2, "D2": 1,
+            "A+": 8, "A": 7, "B+": 6, "B": 5, "C+": 4, "C": 3, "D+": 2, "D": 1
+        };
+
+        const pointToGradeNormal = ["D2", "D2", "D1", "C2", "C1", "B2", "B1", "A2", "A1"];
+        const pointToGradePrePrimary = ["D", "D", "D+", "C", "C+", "B", "B+", "A", "A+"];
+
+        function isPrePrimary() {
+            const std = document.getElementById('in_std').value;
+            return ["NR", "JR", "SR"].includes(std);
+        }
+
+        function getActiveGradeList() {
+            return isPrePrimary() ? gradeOptions.PRE_PRIMARY : gradeOptions.NORMAL;
+        }
 
         function getActiveSubjectList() {
             const std = document.getElementById('in_std').value;
             if (std === "NR" || std === "JR") return subjectLists.NR_JR;
             if (std === "SR") return subjectLists.SR;
-            
-            // Logic for 1ST to 5TH (Remove SS)
-            const primaryGrades = ["1", "2", "3", "4", "5"];
-            if (primaryGrades.includes(std)) return subjectLists.PRIMARY;
-            
-            // Default for 6TH to 10TH
+            if (["1", "2", "3", "4", "5"].includes(std)) return subjectLists.PRIMARY;
             return subjectLists.SECONDARY;
+        }
+
+        function handleStandardChange() {
+            updateSubjectInputs();
+            updateManualGradeSelect();
+            autoSave();
+        }
+
+        function updateManualGradeSelect() {
+            const select = document.getElementById('in_res_manual_grade');
+            select.innerHTML = '';
+            const list = getActiveGradeList();
+            list.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = g;
+                select.appendChild(opt);
+            });
         }
 
         function updateSubjectInputs() {
             const container = document.getElementById('subject-inputs-list');
             container.innerHTML = '';
             const list = getActiveSubjectList();
+            const grades = getActiveGradeList();
             
             list.forEach(s => {
                 const row = document.createElement('div');
                 row.className = 'subject-row';
+                let gradeOpts = grades.map(g => `<option value="${g}">${g}</option>`).join('');
                 row.innerHTML = `
                     <div style="font-size: 12px; font-weight: 600;">${s}</div>
-                    <select class="term1-val" onchange="autoSave()">
-                        ${Object.keys(gradeMap).map(g => `<option value="${g}">${g}</option>`).join('')}
-                    </select>
-                    <select class="term2-val" onchange="autoSave()">
-                        ${Object.keys(gradeMap).map(g => `<option value="${g}">${g}</option>`).join('')}
-                    </select>
+                    <select class="term1-val" onchange="autoSave()">${gradeOpts}</select>
+                    <select class="term2-val" onchange="autoSave()">${gradeOpts}</select>
                 `;
                 container.appendChild(row);
             });
@@ -588,21 +605,20 @@
                 res_status: document.getElementById('in_res_status').value,
                 res_promote: document.getElementById('in_res_promote').value
             };
-            localStorage.setItem('marksheet_v3_6_data', JSON.stringify(data));
+            localStorage.setItem('marksheet_v3_7_data', JSON.stringify(data));
         }
 
         function loadSavedData() {
-            const raw = localStorage.getItem('marksheet_v3_6_data');
+            const raw = localStorage.getItem('marksheet_v3_7_data');
             if(!raw) {
-                updateSubjectInputs();
+                handleStandardChange();
                 return;
             }
             const data = JSON.parse(raw);
             document.getElementById('in_name').value = data.name || '';
             document.getElementById('in_std').value = data.std || '9';
             
-            // Refresh subject list UI based on loaded standard
-            updateSubjectInputs();
+            handleStandardChange();
             
             document.getElementById('in_div').value = data.div || 'A';
             document.getElementById('in_roll').value = data.roll || '';
@@ -623,7 +639,7 @@
         }
 
         function generate() {
-            const raw = localStorage.getItem('marksheet_v3_6_data');
+            const raw = localStorage.getItem('marksheet_v3_7_data');
             if(!raw) return alert("Please enter data first.");
             const data = JSON.parse(raw);
             if(!data.name) return alert("Please enter Student Name.");
@@ -647,8 +663,8 @@
             const currentList = getActiveSubjectList();
 
             currentList.forEach((s, i) => {
-                const g1 = data.grades1[i] || "A1";
-                const g2 = data.grades2[i] || "A1";
+                const g1 = data.grades1[i] || (isPrePrimary() ? "A" : "A1");
+                const g2 = data.grades2[i] || (isPrePrimary() ? "A" : "A1");
                 totalPoints += (gradeMap[g1] + gradeMap[g2]);
                 tbody.innerHTML += `<tr><td class="text-left">${s}</td><td style="font-weight:bold;">${g1}</td><td style="font-weight:bold;">${g2}</td></tr>`;
             });
@@ -658,19 +674,14 @@
                 finalGrade = data.res_manual_grade;
             } else {
                 const avg = Math.round(totalPoints / (currentList.length * 2));
-                finalGrade = pointToGrade[avg] || "D2";
+                finalGrade = isPrePrimary() ? pointToGradePrePrimary[avg] : pointToGradeNormal[avg];
             }
             document.getElementById('out_grade_final').innerText = `GRADE: ${finalGrade}`;
             
             if (data.res_status === 'FAIL') {
                 document.getElementById('out_promotion').innerText = `RESULT : FAILED`;
             } else {
-                let promotionClass;
-                if (data.res_mode === 'manual') {
-                    promotionClass = data.res_promote;
-                } else {
-                    promotionClass = promotionMap[data.std] || "-";
-                }
+                let promotionClass = (data.res_mode === 'manual') ? data.res_promote : (promotionMap[data.std] || "-");
                 document.getElementById('out_promotion').innerText = `PASSED & PROMOTED TO : ${promotionClass}`;
             }
 
@@ -679,41 +690,43 @@
         }
 
         function downloadPDF() {
-          const element = document.getElementById("printable-marksheet");
-          element.style.display = "block";
-          const opt = {
-            margin: 0,
-            filename: "Report_Card.pdf",
-            image: {
-               type: "jpeg",
-               quality: 1
-            },
-            html2canvas: {
-               scale: 4,
-               dpi: 300,
-               letterRendering: true,
-               useCORS: true,
-               allowTaint: true,
-               backgroundColor: "#ffffff",
-               scrollX: 0,
-               scrollY: 0
-            },
-            jsPDF: {
-               unit: "mm",
-               format: [297,210],
-               orientation: "landscape",
-               compress: false
+            const element = document.getElementById("printable-marksheet");
+            if(element.style.display === "none") {
+                alert("Please generate the preview first!");
+                return;
             }
-          };
 
-          setTimeout(() => {
-            html2pdf().set(opt).from(element).save();
-          }, 500);
+            element.style.display = "block";
+            const opt = {
+                margin: 0,
+                filename: "Report_Card.pdf",
+                image: { type: "jpeg", quality: 1 },
+                html2canvas: {
+                    scale: 4,
+                    dpi: 300,
+                    letterRendering: true,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: "#ffffff",
+                    scrollX: 0,
+                    scrollY: 0
+                },
+                jsPDF: {
+                    unit: "mm",
+                    format: [297,210],
+                    orientation: "landscape",
+                    compress: false
+                }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save();
+            }, 500);
         }
 
         function resetAll() {
             if(confirm("Clear all data and reset?")) {
-                localStorage.removeItem('marksheet_v3_6_data');
+                localStorage.removeItem('marksheet_v3_7_data');
                 location.reload();
             }
         }
